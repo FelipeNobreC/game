@@ -44,6 +44,8 @@ class GameState:
         self.open_doors     : set  = set()
         self.revealed_rooms : set  = set()
         self.elevator_on    : bool = False
+        self.max_lives      : int  = 3
+        self.lives          : int  = self.max_lives
 
         # Personagem
         self.player = {
@@ -84,6 +86,7 @@ class GameState:
         self.floor_idx       = idx
         floor_def            = FLOORS[idx]
         self.floor_name      = floor_def["name"]
+        self.lives           = self.max_lives
         self.grid            = build_floor_map()
         self.graph           = GridGraph(self.grid, COLS, ROWS)
         self.open_doors      = set()
@@ -120,6 +123,8 @@ class GameState:
             "defeated":    self.defeated,
             "tsp_ptr":     self.tsp_ptr,
             "tsp_dist":    self.tsp_dist,
+            "lives":       self.lives,
+            "max_lives":   self.max_lives,
         }
 
 
@@ -242,6 +247,21 @@ def trigger_npc(gs: GameState, npc: dict, dlg: DialogSystem):
     dlg.start_npc(npc, on_complete)
 
 
+def register_wrong_answer(gs: GameState, dlg: DialogSystem):
+    gs.lives = max(0, gs.lives - 1)
+    if gs.lives <= 0:
+        dlg.show_game_over(lambda: restart_floor(gs, dlg))
+        return True
+    dlg.notify(f"Resposta errada! Vidas restantes: {gs.lives}", C["red"], 150)
+    return False
+
+
+def restart_floor(gs: GameState, dlg: DialogSystem):
+    current_floor = gs.floor_idx
+    gs.load_floor(current_floor)
+    dlg.notify(f"Andar {current_floor + 1} reiniciado. Vidas restauradas!", C["player"], 210)
+
+
 def collect_book(gs: GameState, drop: dict, dlg):
     drop["visible"] = False
     book = BOOKS[drop["bookId"]]
@@ -328,6 +348,7 @@ def main():
 
     gs  = GameState()
     dlg = DialogSystem()
+    dlg.on_wrong_answer = lambda: register_wrong_answer(gs, dlg)
 
     # Surface de jogo (separada do HUD)
     game_surf = pygame.Surface((GAME_W, GAME_H))

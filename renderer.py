@@ -337,6 +337,16 @@ def render_hud(surf, state, tsp_route, inventory):
         line(floor_name, C["yellow"])
     y += 4
 
+    # ── Vidas ────────────────────────────────────
+    section("[ VIDAS ]")
+    lives = state.get("lives", 3)
+    max_lives = state.get("max_lives", 3)
+    heart_x = sx + 14
+    for i in range(max_lives):
+        color = C["red"] if i < lives else C["hud_dim"]
+        blit_text(surf, "♥", heart_x + i * 24, y, font_medium, color)
+    y += 26
+
     # ── TSP Rota ──────────────────────────────────
     section("[ ROTA TSP ]")
     if not tsp_route:
