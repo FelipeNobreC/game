@@ -200,17 +200,21 @@ class DialogSystem:
             self.buttons.append(btn)
 
     # ── Verifica resposta ────────────────────────────────────
-    def _check_answer(self, opt_idx: int):
+    def _check_answer(self, opt_idx: int, gs=None):
         q = self.npc["questions"][self.q_idx]
         if opt_idx == q["correct"]:
             self.result_ok  = True
             self.result_msg = "CORRETO!\n" + q["explain"]
             self.buttons[opt_idx].state = "correct"
+            if gs:
+                gs.correct_answers += 1
         else:
             self.result_ok  = False
             self.result_msg = "ERRADO! Tente novamente.\n" + q["explain"]
             self.buttons[opt_idx].state = "wrong"
             self.buttons[q["correct"]].state = "correct"
+            if gs:
+                gs.wrong_answers += 1
         self.typewriter.set(self.result_msg)
         self.state = self.STATE_RESULT
         ok_text = "[ PROXIMA PERGUNTA ]" if self.result_ok else "[ TENTAR NOVAMENTE ]"
@@ -261,7 +265,7 @@ class DialogSystem:
                                "[ JOGAR NOVAMENTE ]", C["yellow"])]
 
     # ── Update ───────────────────────────────────────────────
-    def update(self, events, mouse_pos):
+    def update(self, events, mouse_pos, gs=None):
         self.typewriter.update()
         for btn in self.buttons:
             btn.update(mouse_pos)
@@ -280,7 +284,7 @@ class DialogSystem:
 
             for btn in self.buttons:
                 if btn.check_click(event):
-                    self._handle_btn(btn)
+                    self._handle_btn(btn, gs)
 
     def _advance_npc(self):
         nxt = self.line_idx + 1
@@ -291,7 +295,7 @@ class DialogSystem:
             # Terminou as linhas — inicia quiz
             self._start_quiz()
 
-    def _handle_btn(self, btn):
+    def _handle_btn(self, btn, gs=None):
         if not self.typewriter.done:
             self.typewriter.skip()
             self._build_npc_buttons()
@@ -305,7 +309,7 @@ class DialogSystem:
                 self._advance_npc()
 
         elif self.state == self.STATE_QUIZ:
-            self._check_answer(btn._opt_idx)
+            self._check_answer(btn._opt_idx, gs)
 
         elif self.state == self.STATE_RESULT:
             self._advance_result()
