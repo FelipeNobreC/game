@@ -377,6 +377,14 @@ def main():
                         go_next_floor(gs, dlg)
                         continue
 
+                    # Bloquear clique em salas que ainda não foram reveladas
+                    if click_row <= 5:
+                        clicked_room = next((i for i, (cs, ce) in enumerate(ROOM_RANGES)
+                                             if cs <= click_col <= ce), None)
+                        if clicked_room is not None and clicked_room not in gs.revealed_rooms:
+                            dlg.notify("Sala ainda não revelada!", C["red"], 90)
+                            continue
+
                     # Pathfinding BFS
                     path = gs.graph.find_path(
                         gs.player["col"], gs.player["row"],
