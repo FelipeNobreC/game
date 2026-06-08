@@ -162,6 +162,11 @@ def open_nearby_doors(gs: GameState):
         if 0 <= r < ROWS and 0 <= c < COLS:
             if gs.grid[r][c] == 2:
                 gs.open_doors.add(f"{c},{r}")
+                  door_id = f"{c},{r}"
+
+        if gs.grid[r][c] == 2 and door_id not in gs.open_doors:
+            gs.open_doors.add(door_id)
+             door_sound.play()
                 # Porta de sala (row 6) → revela a sala correspondente
                 if r == 6 and c in DOOR_COLS:
                     gs.revealed_rooms.add(DOOR_COLS.index(c))
@@ -246,6 +251,7 @@ def collect_book(gs: GameState, drop: dict, dlg):
     drop["visible"] = False
     book = BOOKS[drop["bookId"]]
     gs.inventory.put(book["id"], book)
+    book_sound.play()
     if dlg:
         dlg.notify(f"  {book['name']} coletado!  ", book["color"])
     check_win(gs, dlg)
