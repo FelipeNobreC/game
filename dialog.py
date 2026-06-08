@@ -203,10 +203,12 @@ class DialogSystem:
     def _check_answer(self, opt_idx: int):
         q = self.npc["questions"][self.q_idx]
         if opt_idx == q["correct"]:
+            correct_sound.play()
             self.result_ok  = True
             self.result_msg = "CORRETO!\n" + q["explain"]
             self.buttons[opt_idx].state = "correct"
         else:
+            wrong_sound.play()
             self.result_ok  = False
             self.result_msg = "ERRADO! Tente novamente.\n" + q["explain"]
             self.buttons[opt_idx].state = "wrong"
