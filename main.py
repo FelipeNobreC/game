@@ -161,16 +161,15 @@ def open_nearby_doors(gs: GameState):
     for dc, dr in ((0, 0), (0, -1), (0, 1), (-1, 0), (1, 0)):
         c, r = col + dc, row + dr
         if 0 <= r < ROWS and 0 <= c < COLS:
-            if gs.grid[r][c] == 2:
-                gs.open_doors.add(f"{c},{r}")
-                  door_id = f"{c},{r}"
+            door_id = f"{c},{r}"
 
         if gs.grid[r][c] == 2 and door_id not in gs.open_doors:
             gs.open_doors.add(door_id)
-             door_sound.play()
-                # Porta de sala (row 6) → revela a sala correspondente
-                if r == 6 and c in DOOR_COLS:
-                    gs.revealed_rooms.add(DOOR_COLS.index(c))
+            door_sound.play()
+
+        # Porta de sala (row 6) → revela a sala correspondente
+        if r == 6 and c in DOOR_COLS:
+            gs.revealed_rooms.add(DOOR_COLS.index(c))
 
 
 def on_player_arrived(gs: GameState, dlg: "DialogSystem" = None):
