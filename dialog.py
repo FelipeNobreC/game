@@ -47,10 +47,10 @@ class Button:
     def update(self, mouse_pos):
         self.hovered = self.rect.collidepoint(mouse_pos)
 
-    def check_click(self, event):
+    def check_click(self, event, mouse_pos):
         if (event.type == pygame.MOUSEBUTTONDOWN
                 and event.button == 1
-                and self.rect.collidepoint(event.pos)):
+                and self.rect.collidepoint(mouse_pos)):
             return True
         return False
 
@@ -295,7 +295,7 @@ class DialogSystem:
                         self._advance_npc()
 
             for btn in self.buttons:
-                if btn.check_click(event):
+                if btn.check_click(event, mouse_pos):
                     self._handle_btn(btn)
 
     def _advance_npc(self):
