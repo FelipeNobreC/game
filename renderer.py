@@ -4,7 +4,7 @@
 
 import pygame
 import math
-from data import C, TILE, COLS, ROWS, ROOM_RANGES, DOOR_COLS
+from data import C, TILE, COLS, ROWS, ROOM_RANGES, DOOR_COLS, FLOORS
 
 # ── Fontes (inicializadas em setup) ──────────────────────────
 font_small  = None   # 8 px  — texto UI
@@ -422,3 +422,64 @@ def render_scanlines(surf, w, h):
     line_s.fill((0, 0, 0, 18))
     for y in range(0, h, 3):
         surf.blit(line_s, (0, y))
+
+
+# ── Tela de Vitória / Resultados ────────────────────────────────
+def render_win_screen(surf, gs, w, h):
+    surf.fill(C["bg"])
+    cx = w // 2
+    cy = h // 2
+
+    # 1. Cálculo do Tempo (60 ticks = 1 segundo)
+    segundos_totais = gs.tick // 60
+    minutos = segundos_totais // 60
+    segundos = segundos_totais % 60
+    tempo_formatado = f"{minutos:02d}:{segundos:02d}"
+
+    # 2. Contagem de Livros por Andar
+    livros_por_andar = {}
+    for andar in FLOORS:
+        nome_curto = andar["name"].split("—")[0].strip() # Pega só "1º Andar"
+        livros_por_andar[nome_curto] = 0
+
+    # Verifica cada livro no inventário e encontra a qual andar pertence
+    for book_id in gs.inventory.keys():
+        for andar in FLOORS:
+            for npc in andar["npcs"]:
+                if npc["book_id"] == book_id:
+                    nome_curto = andar["name"].split("—")[0].strip()
+                    livros_por_andar[nome_curto] += 1
+
+    # 3. Renderização dos Textos
+    y = cy - 200
+    blit_text_center(surf, "PARABENS, MESTRE DOS ALGORITMOS!", cx, y, font_large, C["yellow"])
+    y += 30
+    blit_text_center(surf, "Voce defendeu o seu TCC com sucesso e", cx, y, font_medium, C["white"])
+    y += 20
+    blit_text_center(surf, "coletou todo o conhecimento necessario!", cx, y, font_medium, C["white"])
+    
+    y += 50
+    blit_text_center(surf, "── RESUMO DA JORNADA ──", cx, y, font_large, C["hud_text"])
+    
+    y += 40
+    blit_text_center(surf, f"Tempo Total de Jogo: {tempo_formatado}", cx, y, font_medium, C["white"])
+    y += 30
+    blit_text_center(surf, f"Perguntas Certas: {gs.correct_answers}", cx, y, font_medium, C["green"])
+    y += 30
+    blit_text_center(surf, f"Perguntas Erradas: {gs.wrong_answers}", cx, y, font_medium, C["red"])
+    
+    y += 40
+    blit_text_center(surf, "LIVROS COLETADOS:", cx, y, font_medium, C["yellow"])
+    y += 25
+    
+    # Desenha as estatísticas de cada andar
+    for andar, qtd in livros_por_andar.items():
+        if qtd > 0:
+            blit_text_center(surf, f"{andar}: {qtd} Livros", cx, y, font_small, C["book"])
+            y += 20
+
+    # Botão de Sair (Piscando)
+    pulse = int(math.sin(gs.tick * 0.05) * 100) + 155 # Oscila entre 55 e 255
+    cor_pisca = (pulse, pulse, pulse)
+    y += 30
+    blit_text_center(surf, "[ PRESSIONE ESC PARA SAIR ]", cx, y, font_medium, cor_pisca)

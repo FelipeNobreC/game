@@ -20,7 +20,7 @@ from renderer  import (init_fonts, render_map, render_room_labels,
                        render_path, render_npc, render_book_drop,
                        render_player, render_click_indicator,
                        render_hud, render_scanlines, render_dark_overlay,
-                       blit_text, blit_text_center, HUD_X, HUD_W)
+                       blit_text, blit_text_center, HUD_X, HUD_W, render_win_screen)
 from dialog    import DialogSystem
 
 # ── Janela ────────────────────────────────────────────────────
@@ -63,6 +63,10 @@ class GameState:
         self.entered_rooms   : set  = set()
         self.professors_met  : int  = 0
         self.professors_needed = 2
+
+        # CONTADORES
+        self.correct_answers = 0
+        self.wrong_answers   = 0
 
         # TSP
         self.tsp_route : list = []
@@ -273,8 +277,9 @@ def collect_book(gs: GameState, drop: dict, dlg):
 
 def check_win(gs: GameState, dlg):
     if len(gs.inventory) >= len(BOOKS):
+        gs.screen_mode = "win"
         if dlg:
-            dlg.show_win()
+            dlg.active = False
 
 
 # ─────────────────────────────────────────────────────────────
@@ -435,13 +440,16 @@ def main():
                 if gs.click_indicator[2] >= gs.click_indicator[3]:
                     gs.click_indicator = None
 
-        dlg.update(events, game_mouse)
+        dlg.update(events, game_mouse, gs)
 
         # ── Render ──────────────────────────────────────────
         render_surf.fill(C["bg"])
 
         if gs.screen_mode == "splash":
             draw_splash(render_surf, gs.tick)
+
+        elif gs.screen_mode == "win":
+            render_win_screen(render_surf, gs, WIN_W, WIN_H)
 
         else:
             # Jogo
