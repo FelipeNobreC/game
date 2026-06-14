@@ -4,7 +4,7 @@
 
 import pygame
 import math
-from data import C, TILE, COLS, ROWS, ROOM_RANGES, DOOR_COLS
+from data import C, TILE, COLS, ROWS, ROOM_RANGES, DOOR_COLS, BOOKS
 
 # ── Fontes (inicializadas em setup) ──────────────────────────
 font_small  = None   # 8 px  — texto UI
@@ -337,6 +337,16 @@ def render_hud(surf, state, tsp_route, inventory):
         line(floor_name, C["yellow"])
     y += 4
 
+    # ── Vidas ────────────────────────────────────
+    section("[ VIDAS ]")
+    lives = state.get("lives", 3)
+    max_lives = state.get("max_lives", 3)
+    heart_x = sx + 14
+    for i in range(max_lives):
+        color = C["red"] if i < lives else C["hud_dim"]
+        blit_text(surf, "♥", heart_x + i * 24, y, font_medium, color)
+    y += 26
+
     # ── TSP Rota ──────────────────────────────────
     section("[ ROTA TSP ]")
     if not tsp_route:
@@ -367,7 +377,7 @@ def render_hud(surf, state, tsp_route, inventory):
     else:
         for book in books:
             line(f"  {book['name']}", book["color"])
-    total_books = 4
+    total_books = len(BOOKS)
     got = len(inventory)
     y += 4
     line(f"Livros: {got}/{total_books}",

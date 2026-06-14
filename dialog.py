@@ -48,10 +48,10 @@ class Button:
     def update(self, mouse_pos):
         self.hovered = self.rect.collidepoint(mouse_pos)
 
-    def check_click(self, event):
+    def check_click(self, event, mouse_pos):
         if (event.type == pygame.MOUSEBUTTONDOWN
                 and event.button == 1
-                and self.rect.collidepoint(event.pos)):
+                and self.rect.collidepoint(mouse_pos)):
             return True
         return False
 
@@ -122,6 +122,7 @@ class DialogSystem:
     STATE_BOOK     = "book"       # mostrar livro coletado
     STATE_INVENTORY= "inventory"  # ver inventário
     STATE_WIN      = "win"        # tela de vitória
+    STATE_GAME_OVER= "game_over"  # acabou as vidas
 
     def __init__(self):
         self.state      = self.STATE_IDLE
@@ -137,6 +138,8 @@ class DialogSystem:
         self.book_data  = None
         self.inv_data   = []
         self.inv_scroll = 0
+        self.on_wrong_answer = None
+        self.on_restart_floor = None
 
         # Notificação flutuante
         self.notif_text    = ""
@@ -210,6 +213,8 @@ class DialogSystem:
             self.buttons[opt_idx].state = "correct"
         else:
             wrong_sound.play()
+            if self.on_wrong_answer and self.on_wrong_answer():
+                return
             self.result_ok  = False
             self.result_msg = "ERRADO! Tente novamente.\n" + q["explain"]
             self.buttons[opt_idx].state = "wrong"
@@ -263,6 +268,17 @@ class DialogSystem:
         self.buttons = [Button((WIN_W // 2 - bw//2, WIN_H - 100, bw, 36),
                                "[ JOGAR NOVAMENTE ]", C["yellow"])]
 
+    # ── Tela de game over ───────────────────────────────────
+    def show_game_over(self, on_restart_floor):
+        self.on_restart_floor = on_restart_floor
+        self.state = self.STATE_GAME_OVER
+        self.npc = None
+        self.typewriter.skip()
+        self.buttons = [
+            Button((WIN_W // 2 - 130, WIN_H - 115, 260, 36),
+                   "[ REINICIAR ANDAR ]", C["red"])
+        ]
+
     # ── Update ───────────────────────────────────────────────
     def update(self, events, mouse_pos):
         self.typewriter.update()
@@ -282,7 +298,7 @@ class DialogSystem:
                         self._advance_npc()
 
             for btn in self.buttons:
-                if btn.check_click(event):
+                if btn.check_click(event, mouse_pos):
                     self._handle_btn(btn)
 
     def _advance_npc(self):
@@ -297,7 +313,8 @@ class DialogSystem:
     def _handle_btn(self, btn):
         if not self.typewriter.done:
             self.typewriter.skip()
-            self._build_npc_buttons()
+            if self.state == self.STATE_NPC:
+                self._build_npc_buttons()
             return
 
         if self.state == self.STATE_NPC:
@@ -322,6 +339,11 @@ class DialogSystem:
         elif self.state == self.STATE_WIN:
             pygame.event.post(pygame.event.Event(pygame.QUIT))
 
+        elif self.state == self.STATE_GAME_OVER:
+            self.state = self.STATE_IDLE
+            if self.on_restart_floor:
+                self.on_restart_floor()
+
     # ── Draw ────────────────────────────────────────────────
     def draw(self, surf):
         self._draw_notification(surf)
@@ -329,6 +351,8 @@ class DialogSystem:
             return
         if self.state == self.STATE_WIN:
             self._draw_win(surf); return
+        if self.state == self.STATE_GAME_OVER:
+            self._draw_game_over(surf); return
         if self.state == self.STATE_INVENTORY:
             self._draw_inventory(surf); return
         if self.state == self.STATE_BOOK:
@@ -468,6 +492,19 @@ class DialogSystem:
         for t in topics:
             blit_text_center(surf, t, cx, y, _renderer.font_small, C["player"])
             y += 22
+
+        for btn in self.buttons:
+            btn.draw(surf)
+
+    def _draw_game_over(self, surf):
+        render_dark_overlay(surf, WIN_W, WIN_H, 235)
+        cx = WIN_W // 2
+        blit_text_center(surf, "GAME OVER", cx, 110, _renderer.font_large, C["red"])
+        blit_text_center(surf, "Suas vidas acabaram.", cx, 165,
+                         _renderer.font_medium, C["white"])
+        blit_text_center(surf, "Reinicie o andar para tentar de novo.", cx, 195,
+                         _renderer.font_small, C["gray"])
+        blit_text_center(surf, "♥  ♥  ♥", cx, 245, _renderer.font_large, C["hud_dim"])
 
         for btn in self.buttons:
             btn.draw(surf)
