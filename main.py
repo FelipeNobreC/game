@@ -11,6 +11,7 @@ import sys
 import math
 import pygame
 
+from audio import door_sound, book_sound, MUSIC_PATH
 from data      import (TILE, COLS, ROWS, FLOORS, BOOKS,
                        DOOR_COLS, ROOM_RANGES, C, build_floor_map)
 from hashmap   import HashMap
@@ -165,11 +166,15 @@ def open_nearby_doors(gs: GameState):
     for dc, dr in ((0, 0), (0, -1), (0, 1), (-1, 0), (1, 0)):
         c, r = col + dc, row + dr
         if 0 <= r < ROWS and 0 <= c < COLS:
-            if gs.grid[r][c] == 2:
-                gs.open_doors.add(f"{c},{r}")
-                # Porta de sala (row 6) → revela a sala correspondente
-                if r == 6 and c in DOOR_COLS:
-                    gs.revealed_rooms.add(DOOR_COLS.index(c))
+            door_id = f"{c},{r}"
+
+        if gs.grid[r][c] == 2 and door_id not in gs.open_doors:
+            gs.open_doors.add(door_id)
+            door_sound.play()
+
+        # Porta de sala (row 6) → revela a sala correspondente
+        if r == 6 and c in DOOR_COLS:
+            gs.revealed_rooms.add(DOOR_COLS.index(c))
 
 
 def on_player_arrived(gs: GameState, dlg: "DialogSystem" = None):
@@ -266,6 +271,7 @@ def collect_book(gs: GameState, drop: dict, dlg):
     drop["visible"] = False
     book = BOOKS[drop["bookId"]]
     gs.inventory.put(book["id"], book)
+    book_sound.play()
     if dlg:
         dlg.notify(f"  {book['name']} coletado!  ", book["color"])
     check_win(gs, dlg)
@@ -325,6 +331,11 @@ def draw_splash(surf, tick):
 
 def main():
     pygame.init()
+    pygame.mixer.init()
+  
+    pygame.mixer.music.load(MUSIC_PATH)
+    pygame.mixer.music.set_volume(0.3)
+    pygame.mixer.music.play(-1)
     info = pygame.display.Info()
     screen = pygame.display.set_mode(
         (info.current_w, info.current_h), pygame.FULLSCREEN
@@ -368,7 +379,7 @@ def main():
 
                 # Splash → jogo
                 if gs.screen_mode == "splash":
-                    if event.key in (pygame.K_RETURN, pygame.K_SPACE):
+                    if event.key in (pygame.K_RETURN, pygame.K_SPACE):               
                         gs.screen_mode = "game"
                         gs.load_floor(0)
                         dlg.notify(f"Bem-vindo ao 1 Andar! Clique para mover.", C["player"], 240)
