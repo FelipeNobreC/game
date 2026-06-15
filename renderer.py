@@ -4,7 +4,7 @@
 
 import pygame
 import math
-from data import C, TILE, COLS, ROWS, ROOM_RANGES, DOOR_COLS, FLOORS
+from data import C, TILE, COLS, ROWS, ROOM_RANGES, DOOR_COLS, FLOORS, BOOKS
 
 # ── Fontes (inicializadas em setup) ──────────────────────────
 font_small  = None   # 8 px  — texto UI
@@ -377,7 +377,7 @@ def render_hud(surf, state, tsp_route, inventory):
     else:
         for book in books:
             line(f"  {book['name']}", book["color"])
-    total_books = 4
+    total_books = len(BOOKS)
     got = len(inventory)
     y += 4
     line(f"Livros: {got}/{total_books}",

@@ -4,6 +4,7 @@
 
 import pygame
 import renderer as _renderer
+from audio import correct_sound, wrong_sound
 from renderer import (blit_text, blit_text_center, draw_rect_border,
                       render_dialog_bg, render_dark_overlay)
 from data import C, COLS, ROWS, TILE
@@ -206,12 +207,14 @@ class DialogSystem:
     def _check_answer(self, opt_idx: int, gs=None):
         q = self.npc["questions"][self.q_idx]
         if opt_idx == q["correct"]:
+            correct_sound.play()
             self.result_ok  = True
             self.result_msg = "CORRETO!\n" + q["explain"]
             self.buttons[opt_idx].state = "correct"
             if gs:
                 gs.correct_answers += 1
         else:
+            wrong_sound.play()
             if self.on_wrong_answer and self.on_wrong_answer():
                 return
             self.result_ok  = False
