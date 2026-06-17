@@ -11,7 +11,7 @@ import sys
 import math
 import pygame
 
-from audio import door_sound, book_sound, MUSIC_PATH
+import audio
 from data      import (TILE, COLS, ROWS, FLOORS, BOOKS,
                        DOOR_COLS, ROOM_RANGES, C, build_floor_map)
 from hashmap   import HashMap
@@ -171,14 +171,12 @@ def open_nearby_doors(gs: GameState):
         c, r = col + dc, row + dr
         if 0 <= r < ROWS and 0 <= c < COLS:
             door_id = f"{c},{r}"
-
-        if gs.grid[r][c] == 2 and door_id not in gs.open_doors:
-            gs.open_doors.add(door_id)
-            door_sound.play()
-
-        # Porta de sala (row 6) → revela a sala correspondente
-        if r == 6 and c in DOOR_COLS:
-            gs.revealed_rooms.add(DOOR_COLS.index(c))
+            if gs.grid[r][c] == 2 and door_id not in gs.open_doors:
+                gs.open_doors.add(door_id)
+                audio.door_sound.play()
+            # Porta de sala (row 6) → revela a sala correspondente
+            if r == 6 and c in DOOR_COLS:
+                gs.revealed_rooms.add(DOOR_COLS.index(c))
 
 
 def on_player_arrived(gs: GameState, dlg: "DialogSystem" = None):
@@ -275,7 +273,7 @@ def collect_book(gs: GameState, drop: dict, dlg):
     drop["visible"] = False
     book = BOOKS[drop["bookId"]]
     gs.inventory.put(book["id"], book)
-    book_sound.play()
+    audio.book_sound.play()
     if dlg:
         dlg.notify(f"  {book['name']} coletado!  ", book["color"])
     check_win(gs, dlg)
@@ -285,7 +283,7 @@ def check_win(gs: GameState, dlg):
     if len(gs.inventory) >= len(BOOKS):
         gs.screen_mode = "win"
         if dlg:
-            dlg.active = False
+            dlg.state = dlg.STATE_IDLE
 
 
 # ─────────────────────────────────────────────────────────────
@@ -337,8 +335,9 @@ def draw_splash(surf, tick):
 def main():
     pygame.init()
     pygame.mixer.init()
-  
-    pygame.mixer.music.load(MUSIC_PATH)
+    audio.init_audio()
+
+    pygame.mixer.music.load(audio.MUSIC_PATH)
     pygame.mixer.music.set_volume(0.3)
     pygame.mixer.music.play(-1)
     info = pygame.display.Info()
@@ -415,7 +414,7 @@ def main():
                         continue
 
                     # Bloquear clique em salas que ainda não foram reveladas
-                    if click_row <= 5:
+                    if click_row <= 6:
                         clicked_room = next((i for i, (cs, ce) in enumerate(ROOM_RANGES)
                                              if cs <= click_col <= ce), None)
                         if clicked_room is not None and clicked_room not in gs.revealed_rooms:
@@ -500,8 +499,9 @@ def main():
             # HUD lateral
             render_hud(render_surf, gs.hud_state(), gs.tsp_route, gs.inventory)
 
-        # Diálogo (sempre por cima)
-        dlg.draw(render_surf)
+        # Diálogo (sempre por cima, exceto na tela de vitória)
+        if gs.screen_mode != "win":
+            dlg.draw(render_surf)
 
         # Escala para tela cheia com letterbox
         screen.fill((0, 0, 0))

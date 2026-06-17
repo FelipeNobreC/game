@@ -1,2 +1,9 @@
 __pycache__/
 *.py[cod]
+
+# Build artifacts
+build/
+dist/
+*.spec.bak
+AlgoQuest-*.zip
+AlgoQuest-*.dmg
