@@ -183,6 +183,11 @@ def on_player_arrived(gs: GameState, dlg: "DialogSystem" = None):
     p = gs.player
     col, row = p["col"], p["row"]
 
+    # Chegou no elevador?
+    if gs.elevator_on and 21 <= col <= 23 and 11 <= row <= 13:
+        go_next_floor(gs, dlg)
+        return
+
     # Perto de NPC?
     for npc in gs.npcs:
         if npc["id"] in gs.defeated:
@@ -410,7 +415,17 @@ def main():
                     if (gs.elevator_on
                             and 21 <= click_col <= 23
                             and 11 <= click_row <= 13):
-                        go_next_floor(gs, dlg)
+                        path = gs.graph.find_path(
+                            gs.player["col"], gs.player["row"],
+                            click_col, click_row,
+                            gs.open_doors,
+                        )
+                        if path:
+                            gs.player["path"]   = path
+                            gs.player["moving"] = True
+                            gs.click_indicator  = [click_col, click_row, 0, 25]
+                        else:
+                            go_next_floor(gs, dlg)
                         continue
 
                     # Bloquear clique em salas que ainda não foram reveladas

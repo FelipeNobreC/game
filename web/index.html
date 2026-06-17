@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AlgoQuest — Jogo Educativo de Algoritmos</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap');
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --teal:    #4af7c4;
+      --teal-dim: #1a6b52;
+      --yellow:  #ffcc3c;
+      --bg:      #0a0c14;
+      --panel:   #0e1220;
+      --border:  #1a2035;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--teal);
+      font-family: 'Share Tech Mono', monospace;
+      overflow: hidden;
+    }
+
+    /* ── scanlines overlay ── */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(
+        to bottom,
+        transparent,
+        transparent 2px,
+        rgba(0,0,0,.18) 2px,
+        rgba(0,0,0,.18) 4px
+      );
+      pointer-events: none;
+      z-index: 100;
+    }
+
+    /* ── noise grain ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: -50%;
+      width: 200%;
+      height: 200%;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      opacity: .035;
+      pointer-events: none;
+      z-index: 99;
+      animation: grain 0.8s steps(2) infinite;
+    }
+
+    @keyframes grain {
+      0%   { transform: translate(0, 0); }
+      25%  { transform: translate(-2%, -3%); }
+      50%  { transform: translate(3%, 1%); }
+      75%  { transform: translate(-1%, 4%); }
+      100% { transform: translate(2%, -1%); }
+    }
+
+    /* ── grid background ── */
+    .grid-bg {
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(var(--border) 1px, transparent 1px),
+        linear-gradient(90deg, var(--border) 1px, transparent 1px);
+      background-size: 32px 32px;
+      opacity: .4;
+    }
+
+    /* ── glow vignette ── */
+    .vignette {
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(ellipse 70% 60% at 50% 50%,
+        transparent 40%, var(--bg) 100%);
+    }
+
+    /* ── center stage ── */
+    .stage {
+      position: relative;
+      z-index: 10;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+    }
+
+    /* ── logo ── */
+    .logo {
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 900;
+      font-size: clamp(3.5rem, 9vw, 7rem);
+      letter-spacing: .12em;
+      line-height: 1;
+      color: var(--teal);
+      text-shadow:
+        0 0 10px rgba(74,247,196,.7),
+        0 0 30px rgba(74,247,196,.4),
+        0 0 70px rgba(74,247,196,.15);
+      animation: flicker 6s infinite;
+      user-select: none;
+    }
+
+    @keyframes flicker {
+      0%, 95%, 100% { opacity: 1; }
+      96%            { opacity: .7; }
+      97%            { opacity: 1; }
+      98%            { opacity: .5; }
+      99%            { opacity: .9; }
+    }
+
+    .tagline {
+      margin-top: 10px;
+      font-size: clamp(.7rem, 1.6vw, 1rem);
+      letter-spacing: .35em;
+      text-transform: uppercase;
+      color: #4a6660;
+    }
+
+    /* ── divider ── */
+    .divider {
+      width: min(480px, 86vw);
+      height: 1px;
+      margin: 36px 0 38px;
+      background: linear-gradient(
+        90deg,
+        transparent,
+        var(--teal-dim) 30%,
+        var(--teal-dim) 70%,
+        transparent
+      );
+      opacity: .6;
+    }
+
+    /* ── buttons ── */
+    .btn-group {
+      display: flex;
+      gap: 18px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .btn {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      gap: 14px;
+      padding: 16px 32px;
+      min-width: 220px;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: .95rem;
+      letter-spacing: .08em;
+      text-decoration: none;
+      color: var(--bg);
+      background: var(--teal);
+      border: none;
+      cursor: pointer;
+      clip-path: polygon(
+        0 0,
+        calc(100% - 12px) 0,
+        100% 12px,
+        100% 100%,
+        12px 100%,
+        0 calc(100% - 12px)
+      );
+      transition: background .15s, box-shadow .15s, transform .1s;
+      box-shadow:
+        0 0 18px rgba(74,247,196,.35),
+        inset 0 1px 0 rgba(255,255,255,.15);
+    }
+
+    .btn:hover {
+      background: #78ffda;
+      box-shadow:
+        0 0 32px rgba(74,247,196,.65),
+        0 0 60px rgba(74,247,196,.2),
+        inset 0 1px 0 rgba(255,255,255,.2);
+      transform: translateY(-2px);
+    }
+
+    .btn:active {
+      transform: translateY(1px);
+      box-shadow: 0 0 12px rgba(74,247,196,.4);
+    }
+
+    .btn.windows {
+      background: var(--teal);
+    }
+
+    .btn.mac {
+      color: var(--bg);
+      background: var(--yellow);
+      box-shadow:
+        0 0 18px rgba(255,204,60,.35),
+        inset 0 1px 0 rgba(255,255,255,.15);
+      clip-path: polygon(
+        0 0,
+        calc(100% - 12px) 0,
+        100% 12px,
+        100% 100%,
+        12px 100%,
+        0 calc(100% - 12px)
+      );
+    }
+
+    .btn.mac:hover {
+      background: #ffd966;
+      box-shadow:
+        0 0 32px rgba(255,204,60,.65),
+        0 0 60px rgba(255,204,60,.2),
+        inset 0 1px 0 rgba(255,255,255,.2);
+      transform: translateY(-2px);
+    }
+
+    /* corner accent */
+    .btn::before {
+      content: '';
+      position: absolute;
+      top: 0; right: 0;
+      width: 12px; height: 12px;
+      background: rgba(0,0,0,.25);
+      clip-path: polygon(0 0, 100% 100%, 100% 0);
+    }
+
+    .btn-icon {
+      flex-shrink: 0;
+      width: 22px;
+      height: 22px;
+      fill: currentColor;
+    }
+
+    .btn-label {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      line-height: 1.2;
+    }
+
+    .btn-label small {
+      font-size: .7rem;
+      opacity: .7;
+      letter-spacing: .05em;
+    }
+
+    .btn-label strong {
+      font-size: 1rem;
+      font-weight: normal;
+    }
+
+    /* ── version badge ── */
+    .version {
+      margin-top: 40px;
+      font-size: .7rem;
+      letter-spacing: .2em;
+      color: #2a3a34;
+    }
+
+    /* ── corner deco ── */
+    .corner {
+      position: fixed;
+      width: 60px;
+      height: 60px;
+      opacity: .25;
+    }
+    .corner.tl { top: 20px;  left: 20px;
+      border-top: 1px solid var(--teal); border-left: 1px solid var(--teal); }
+    .corner.tr { top: 20px;  right: 20px;
+      border-top: 1px solid var(--teal); border-right: 1px solid var(--teal); }
+    .corner.bl { bottom: 20px; left: 20px;
+      border-bottom: 1px solid var(--teal); border-left: 1px solid var(--teal); }
+    .corner.br { bottom: 20px; right: 20px;
+      border-bottom: 1px solid var(--teal); border-right: 1px solid var(--teal); }
+  </style>
+</head>
+<body>
+
+  <div class="grid-bg"></div>
+  <div class="vignette"></div>
+
+  <div class="corner tl"></div>
+  <div class="corner tr"></div>
+  <div class="corner bl"></div>
+  <div class="corner br"></div>
+
+  <main class="stage">
+
+    <h1 class="logo">ALGOQUEST</h1>
+    <p class="tagline">Jogo Educativo de Algoritmos</p>
+
+    <div class="divider"></div>
+
+    <div class="btn-group">
+
+      <!-- Windows -->
+      <a class="btn windows" href="https://github.com/FelipeNobreC/game/releases/download/v1.0.0/AlgoQuest-Windows.exe" download>
+        <svg class="btn-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M3 12V6.75L10.5 5.5V12H3ZM11.5 5.35L21 3.75V12H11.5V5.35ZM3 13H10.5V19.5L3 18.25V13ZM11.5 13H21V20.25L11.5 18.65V13Z"/>
+        </svg>
+        <span class="btn-label">
+          <small>Download para</small>
+          <strong>Windows</strong>
+        </span>
+      </a>
+
+      <!-- macOS -->
+      <a class="btn mac" href="https://github.com/FelipeNobreC/game/releases/download/v1.0.0/AlgoQuest-macOS.zip" download>
+        <svg class="btn-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+        </svg>
+        <span class="btn-label">
+          <small>Download para</small>
+          <strong>macOS</strong>
+        </span>
+      </a>
+
+    </div>
+
+    <p class="version">v1.0.0 &nbsp;·&nbsp; AlgoQuest &nbsp;·&nbsp; 2025</p>
+
+  </main>
+
+</body>
+</html>

@@ -1,0 +1,38 @@
+name: Build Windows Executable
+
+on:
+  workflow_dispatch:   # disparo manual pelo GitHub
+  push:
+    tags:
+      - 'v*'          # dispara em qualquer tag v1.0.0, v1.1.0...
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'   # 3.11 tem melhor suporte no Windows com pygame
+
+      - name: Install dependencies
+        run: pip install pygame pyinstaller
+
+      - name: Build executable
+        run: pyinstaller algoquest.spec --noconfirm
+
+      - name: Zip the output folder
+        run: Compress-Archive -Path dist\AlgoQuest\* -DestinationPath AlgoQuest-Windows.zip
+        shell: pwsh
+
+      - name: Upload to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.0
+          files: AlgoQuest-Windows.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
